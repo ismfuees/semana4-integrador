@@ -266,6 +266,31 @@ package "edu.uees.tutorias.notification" {
 }
 
 ' ════════════════════════════════════════════════════════
+' PAQUETE: facade
+' ════════════════════════════════════════════════════════
+
+package "edu.uees.tutorias.facade" {
+
+    interface ServicioCalendario {
+        + registrarEvento(reserva: Reserva, enlace: String) : void
+    }
+
+    class ServicioCalendarioConsola {
+        + registrarEvento(reserva: Reserva, enlace: String) : void
+    }
+
+    class TutoriaFacade {
+        - servicioReservas   : ServicioReservas
+        - servicioCalendario : ServicioCalendario
+        + activarTutoriaVirtual(estudiante: Estudiante, horario: HorarioTutoria) : Reserva
+    }
+
+    ServicioCalendario  <|..  ServicioCalendarioConsola  : implementa
+    TutoriaFacade       -->   ServicioReservas            : delega a >
+    TutoriaFacade       -->   ServicioCalendario          : registra via >
+}
+
+' ════════════════════════════════════════════════════════
 ' PAQUETE: service
 ' ════════════════════════════════════════════════════════
 

@@ -4,6 +4,8 @@ import edu.uees.tutorias.adapter.MicrosoftTeamsAPI;
 import edu.uees.tutorias.adapter.TeamsAdapter;
 import edu.uees.tutorias.adapter.Videoconferencia;
 import edu.uees.tutorias.domain.*;
+import edu.uees.tutorias.facade.ServicioCalendario;
+import edu.uees.tutorias.facade.TutoriaFacade;
 import edu.uees.tutorias.notification.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -397,5 +399,121 @@ class ServicioReservasTest {
         assertNotNull(enlace);
         assertFalse(enlace.isBlank());
         assertTrue(enlace.startsWith("https://teams.microsoft.com"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests de la Facade (TutoriaFacade)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void facade_activarTutoriaVirtual_ejecutaLosTresPasosEnOrden() {
+        // Verifica que la Facade: crea la reserva, la confirma (genera enlace
+        // via TeamsAdapter) y registra el evento en el calendario,
+        // todo en el orden correcto y en una sola llamada.
+        Asignatura asignatura = new Asignatura(10L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioVirtual = new HorarioTutoriaBuilder()
+                .id(40L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 15, 9, 0))
+                .fin(LocalDateTime.of(2026, 9, 15, 10, 0))
+                .modalidad(Modalidad.VIRTUAL)
+                .build();
+
+        // Registra los pasos ejecutados en orden
+        List<String> pasos = new ArrayList<>();
+
+        // Notificador espia que registra cada notificación
+        Notificador notificadorEspia = (dest, msg) -> pasos.add("NOTIFICADO:" + dest);
+
+        // Calendario espia que registra el registro del evento
+        ServicioCalendario calendarioEspia = (reserva, enlace) ->
+                pasos.add("CALENDARIO:" + reserva.getId() + "|enlace=" + enlace);
+
+        Videoconferencia teams = new TeamsAdapter(new MicrosoftTeamsAPI());
+        ServicioReservas servicioConVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), notificadorEspia, teams);
+
+        TutoriaFacade facade = new TutoriaFacade(servicioConVideo, calendarioEspia);
+        Reserva reserva = facade.activarTutoriaVirtual(estudiante, horarioVirtual);
+
+        // La reserva debe quedar CONFIRMADA
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+
+        // El enlace de Teams debe estar asignado al horario
+        assertFalse(horarioVirtual.getEnlace().isBlank());
+        assertTrue(horarioVirtual.getEnlace().startsWith("https://teams.microsoft.com"));
+
+        // Deben haberse ejecutado exactamente 3 pasos:
+        // 1) notificación al crear, 2) notificación al confirmar, 3) registro en calendario
+        assertEquals(3, pasos.size(),
+                "La Facade debe ejecutar: crear(notifica) + confirmar(notifica) + calendario");
+
+        // El calendario debe haberse registrado con el enlace generado
+        assertTrue(pasos.get(2).startsWith("CALENDARIO:"));
+        assertTrue(pasos.get(2).contains("enlace=https://teams.microsoft.com"));
+    }
+
+    @Test
+    void facade_activarTutoriaPresencial_noGeneraEnlaceYRegistraCalendario() {
+        // Una tutoría PRESENCIAL también debe pasar por la Facade completa:
+        // crear, confirmar (sin enlace) y registrar en calendario.
+        Asignatura asignatura = new Asignatura(11L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioPresencial = new HorarioTutoriaBuilder()
+                .id(41L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 16, 10, 0))
+                .fin(LocalDateTime.of(2026, 9, 16, 11, 0))
+                .modalidad(Modalidad.PRESENCIAL)
+                .ubicacion("Aula 305, Edificio A")
+                .build();
+
+        boolean[] calendarioRegistrado = {false};
+        ServicioCalendario calendarioEspia = (reserva, enlace) -> {
+            calendarioRegistrado[0] = true;
+            assertTrue(enlace.isBlank(),
+                    "Las tutorías presenciales no deben tener enlace en el calendario");
+        };
+
+        Videoconferencia teams = new TeamsAdapter(new MicrosoftTeamsAPI());
+        Notificador silencioso = (dest, msg) -> { };
+        ServicioReservas servicioConVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), silencioso, teams);
+
+        TutoriaFacade facade = new TutoriaFacade(servicioConVideo, calendarioEspia);
+        Reserva reserva = facade.activarTutoriaVirtual(estudiante, horarioPresencial);
+
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+        assertTrue(horarioPresencial.getEnlace().isBlank());
+        assertTrue(calendarioRegistrado[0], "El calendario debe registrarse siempre");
+    }
+
+    @Test
+    void facade_sinAdapter_activaTutoriaVirtualSinEnlace() {
+        // Si no hay Adapter configurado, la Facade igual debe completar los
+        // tres pasos sin errores; el enlace simplemente queda vacío.
+        Asignatura asignatura = new Asignatura(12L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioVirtual = new HorarioTutoriaBuilder()
+                .id(42L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 17, 14, 0))
+                .fin(LocalDateTime.of(2026, 9, 17, 15, 0))
+                .modalidad(Modalidad.VIRTUAL)
+                .build();
+
+        boolean[] calendarioRegistrado = {false};
+        ServicioCalendario calendarioEspia =
+                (reserva, enlace) -> calendarioRegistrado[0] = true;
+
+        Notificador silencioso = (dest, msg) -> { };
+        // servicio SIN adapter (constructor de 2 parámetros)
+        ServicioReservas servicioSinVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), silencioso);
+
+        TutoriaFacade facade = new TutoriaFacade(servicioSinVideo, calendarioEspia);
+        Reserva reserva = facade.activarTutoriaVirtual(estudiante, horarioVirtual);
+
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+        assertTrue(horarioVirtual.getEnlace().isBlank());
+        assertTrue(calendarioRegistrado[0]);
     }
 }

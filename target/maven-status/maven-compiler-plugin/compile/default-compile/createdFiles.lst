@@ -1,9 +1,12 @@
 edu/uees/tutorias/domain/Estudiante.class
 edu/uees/tutorias/service/RepositorioReservasEnMemoria.class
+edu/uees/tutorias/facade/ServicioCalendario.class
 edu/uees/tutorias/domain/EstadoReserva.class
+edu/uees/tutorias/facade/TutoriaFacade.class
 edu/uees/tutorias/adapter/MicrosoftTeamsAPI.class
 edu/uees/tutorias/domain/Reserva.class
 edu/uees/tutorias/domain/HorarioTutoria.class
+edu/uees/tutorias/facade/ServicioCalendarioConsola.class
 edu/uees/tutorias/domain/Modalidad.class
 edu/uees/tutorias/notification/EmailCreator.class
 edu/uees/tutorias/notification/NotificadorEmail.class
