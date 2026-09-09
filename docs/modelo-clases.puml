@@ -1,0 +1,120 @@
+@startuml Sistema_Gestion_Tutorias
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F7F8FA
+    BorderColor #5A5A5A
+    ArrowColor #3b82d4
+}
+
+' ── Enumeración ──────────────────────────────────────────────────────────────
+enum EstadoReserva {
+    PENDIENTE
+    CONFIRMADA
+    CANCELADA
+    REALIZADA
+}
+
+' ── Jerarquía de Usuario ─────────────────────────────────────────────────────
+abstract class Usuario {
+    - id: Long
+    - nombre: String
+    - email: String
+    + getId(): Long
+    + getNombre(): String
+    + getEmail(): String
+}
+
+class Estudiante {
+    - matricula: String
+    + registrarReserva(reserva: Reserva): void
+    + consultarReservas(): List<Reserva>
+    + getMatricula(): String
+}
+
+class Docente {
+    - departamento: String
+    + publicarHorario(horario: HorarioTutoria): void
+    + consultarHorarios(): List<HorarioTutoria>
+    + getDepartamento(): String
+}
+
+Usuario <|-- Estudiante
+Usuario <|-- Docente
+
+' ── Asignatura ───────────────────────────────────────────────────────────────
+class Asignatura {
+    - id: Long
+    - nombre: String
+    - codigo: String
+    + getNombre(): String
+    + getCodigo(): String
+}
+
+' ── Horario de tutoría ───────────────────────────────────────────────────────
+class HorarioTutoria {
+    - id: Long
+    - inicio: LocalDateTime
+    - fin: LocalDateTime
+    - disponible: boolean
+    + estaDisponible(): boolean
+    + reservar(): void
+    + liberar(): void
+}
+
+Docente "1" -- "0..*" HorarioTutoria : publica >
+HorarioTutoria "0..*" --> "1" Asignatura : corresponde a >
+
+' ── Reserva ──────────────────────────────────────────────────────────────────
+class Reserva {
+    - id: Long
+    - estado: EstadoReserva
+    - fechaCreacion: LocalDateTime
+    + confirmar(): void
+    + cancelar(): void
+    + reprogramar(nuevoHorario: HorarioTutoria): void
+    + marcarRealizada(): void
+    + getEstado(): EstadoReserva
+}
+
+Reserva --> EstadoReserva : usa >
+Estudiante "1" -- "0..*" Reserva : realiza >
+Reserva "0..*" --> "1" HorarioTutoria : ocupa >
+
+' ── Servicio (coordinador del flujo) ─────────────────────────────────────────
+class ServicioReservas {
+    + crearReserva(estudiante, horario): Reserva
+    + confirmarReserva(reservaId: Long): void
+    + cancelarReserva(reservaId: Long): void
+    + reprogramarReserva(reservaId: Long, nuevoHorario): void
+}
+
+ServicioReservas ..> Reserva : crea >
+ServicioReservas ..> RepositorioReservas : persiste via >
+ServicioReservas ..> Notificador : notifica via >
+
+' ── Abstracciones de infraestructura ─────────────────────────────────────────
+interface RepositorioReservas {
+    + guardar(reserva: Reserva): void
+    + buscarPorId(id: Long): Reserva
+}
+
+interface Notificador {
+    + enviar(destinatario: String, mensaje: String): void
+}
+
+' ── Implementaciones concretas ───────────────────────────────────────────────
+class RepositorioReservasEnMemoria {
+    + guardar(reserva: Reserva): void
+    + buscarPorId(id: Long): Reserva
+}
+
+class NotificadorEmail {
+    + enviar(destinatario: String, mensaje: String): void
+}
+
+RepositorioReservas <|.. RepositorioReservasEnMemoria : implementa
+Notificador <|.. NotificadorEmail : implementa
+
+@enduml
