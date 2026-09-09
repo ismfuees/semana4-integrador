@@ -1,5 +1,8 @@
 package edu.uees.tutorias.service;
 
+import edu.uees.tutorias.adapter.MicrosoftTeamsAPI;
+import edu.uees.tutorias.adapter.TeamsAdapter;
+import edu.uees.tutorias.adapter.Videoconferencia;
 import edu.uees.tutorias.domain.*;
 import edu.uees.tutorias.notification.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -296,5 +299,103 @@ class ServicioReservasTest {
                         .matricula("2024-013")
                         .build()
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests del Adapter (Videoconferencia / TeamsAdapter)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void adapter_confirmarReservaVirtual_asignaEnlaceDeTeams() {
+        // Un horario VIRTUAL + TeamsAdapter: al confirmar, el enlace debe quedar
+        // asignado al horario y la URL debe contener el dominio de Teams.
+        Asignatura asignatura = new Asignatura(2L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioVirtual = new HorarioTutoriaBuilder()
+                .id(30L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 10, 14, 0))
+                .fin(LocalDateTime.of(2026, 9, 10, 15, 0))
+                .modalidad(Modalidad.VIRTUAL)
+                .build();
+
+        Videoconferencia teams = new TeamsAdapter(new MicrosoftTeamsAPI());
+        Notificador silencioso = (dest, msg) -> { /* no hace nada */ };
+        ServicioReservas servicioConVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), silencioso, teams);
+
+        Reserva reserva = servicioConVideo.crearReserva(estudiante, horarioVirtual);
+        servicioConVideo.confirmarReserva(reserva.getId());
+
+        // El enlace debe haberse generado y debe apuntar a Teams
+        assertFalse(horarioVirtual.getEnlace().isBlank(),
+                "El enlace no debe estar vacío después de confirmar");
+        assertTrue(horarioVirtual.getEnlace().startsWith("https://teams.microsoft.com"),
+                "El enlace debe ser de Microsoft Teams");
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+    }
+
+    @Test
+    void adapter_confirmarReservaPresencial_noGeneraEnlace() {
+        // Un horario PRESENCIAL: aunque haya TeamsAdapter, no debe generar enlace
+        // porque la reunión es en persona.
+        Asignatura asignatura = new Asignatura(3L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioPresencial = new HorarioTutoriaBuilder()
+                .id(31L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 11, 10, 0))
+                .fin(LocalDateTime.of(2026, 9, 11, 11, 0))
+                .modalidad(Modalidad.PRESENCIAL)
+                .build();
+
+        Videoconferencia teams = new TeamsAdapter(new MicrosoftTeamsAPI());
+        Notificador silencioso = (dest, msg) -> { /* no hace nada */ };
+        ServicioReservas servicioConVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), silencioso, teams);
+
+        Reserva reserva = servicioConVideo.crearReserva(estudiante, horarioPresencial);
+        servicioConVideo.confirmarReserva(reserva.getId());
+
+        // El enlace debe permanecer vacío para una tutoría presencial
+        assertTrue(horarioPresencial.getEnlace().isBlank(),
+                "Las tutorías presenciales no deben tener enlace de videoconferencia");
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+    }
+
+    @Test
+    void adapter_sinVideoconferencia_enlacePermaneceVacio() {
+        // Sin Adapter configurado, confirmar una reserva VIRTUAL no debe
+        // lanzar error ni generar ningún enlace — el servicio funciona igual.
+        Asignatura asignatura = new Asignatura(4L, "Diseño de Software", "UCOM0310");
+        HorarioTutoria horarioVirtual = new HorarioTutoriaBuilder()
+                .id(32L)
+                .asignatura(asignatura)
+                .inicio(LocalDateTime.of(2026, 9, 12, 9, 0))
+                .fin(LocalDateTime.of(2026, 9, 12, 10, 0))
+                .modalidad(Modalidad.VIRTUAL)
+                .build();
+
+        // servicio sin Adapter (constructor original de 2 parámetros)
+        Notificador silencioso = (dest, msg) -> { /* no hace nada */ };
+        ServicioReservas servicioSinVideo =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), silencioso);
+
+        Reserva reserva = servicioSinVideo.crearReserva(estudiante, horarioVirtual);
+        servicioSinVideo.confirmarReserva(reserva.getId());
+
+        assertTrue(horarioVirtual.getEnlace().isBlank());
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+    }
+
+    @Test
+    void teamsAdapter_traduceLlamadaAlMetodoCorrecto() {
+        // Prueba unitaria del Adapter en aislamiento:
+        // crearEnlace() debe producir una URL de Teams sin importar
+        // lo que haga ServicioReservas.
+        Videoconferencia adapter = new TeamsAdapter(new MicrosoftTeamsAPI());
+        String enlace = adapter.crearEnlace("Tutoría Diseño de Software", "docente@uees.edu.ec");
+
+        assertNotNull(enlace);
+        assertFalse(enlace.isBlank());
+        assertTrue(enlace.startsWith("https://teams.microsoft.com"));
     }
 }

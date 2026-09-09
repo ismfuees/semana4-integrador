@@ -109,16 +109,19 @@ package "edu.uees.tutorias.domain" {
         - modalidad       : Modalidad
         - capacidadMaxima : int
         - ubicacion       : String
-        + estaDisponible()    : boolean
-        + reservar()          : void
-        + liberar()           : void
-        + getId()             : Long
-        + getInicio()         : LocalDateTime
-        + getFin()            : LocalDateTime
-        + getAsignatura()     : Asignatura
-        + getModalidad()      : Modalidad
-        + getCapacidadMaxima(): int
-        + getUbicacion()      : String
+        - enlace          : String
+        + estaDisponible()      : boolean
+        + reservar()            : void
+        + liberar()             : void
+        + setEnlace(e: String)  : void
+        + getId()               : Long
+        + getInicio()           : LocalDateTime
+        + getFin()              : LocalDateTime
+        + getAsignatura()       : Asignatura
+        + getModalidad()        : Modalidad
+        + getCapacidadMaxima()  : int
+        + getUbicacion()        : String
+        + getEnlace()           : String
     }
 
     class HorarioTutoriaBuilder {
@@ -162,6 +165,29 @@ package "edu.uees.tutorias.domain" {
     Reserva     "0..*" --> "1"    HorarioTutoria  : ocupa >
     Reserva     -->              EstadoReserva    : usa >
     Estudiante  "1"    --  "0..*" Reserva         : realiza >
+}
+
+' ════════════════════════════════════════════════════════
+' PAQUETE: adapter
+' ════════════════════════════════════════════════════════
+
+package "edu.uees.tutorias.adapter" {
+
+    interface Videoconferencia {
+        + crearEnlace(titulo: String, correoOrganizador: String) : String
+    }
+
+    class MicrosoftTeamsAPI {
+        + scheduleOnlineMeeting(subject: String, organizer: String) : String
+    }
+
+    class TeamsAdapter {
+        - teamsAPI : MicrosoftTeamsAPI
+        + crearEnlace(titulo: String, correoOrganizador: String) : String
+    }
+
+    Videoconferencia  <|..  TeamsAdapter    : implementa
+    TeamsAdapter      -->   MicrosoftTeamsAPI : delega >
 }
 
 ' ════════════════════════════════════════════════════════
@@ -267,6 +293,7 @@ package "edu.uees.tutorias.service" {
     ServicioReservas     -->   RepositorioReservas            : persiste via >
     ServicioReservas     -->   Notificador                    : notifica via (legado) >
     ServicioReservas     o-->  NotificadorCreator             : notifica via (multi-canal) >
+    ServicioReservas     o-->  Videoconferencia               : genera enlace via (opcional) >
     ServicioReservas     ..>   Reserva                        : crea >
 }
 

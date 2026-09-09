@@ -25,6 +25,9 @@ public class HorarioTutoria {
     private final int       capacidadMaxima;
     private final String    ubicacion;
 
+    /** Enlace de videoconferencia; se asigna cuando se confirma una tutoría virtual. */
+    private String enlace = "";
+
     /**
      * Constructor original (4 parámetros). Mantiene compatibilidad con todo
      * el código y tests existentes. Usa valores por defecto para los nuevos
@@ -70,6 +73,11 @@ public class HorarioTutoria {
         this.disponible = true;
     }
 
+    /** Asigna el enlace de videoconferencia generado por el Adapter. */
+    public void setEnlace(String enlace) {
+        this.enlace = enlace != null ? enlace : "";
+    }
+
     public boolean estaDisponible()      { return disponible; }
     public Long getId()                  { return id; }
     public LocalDateTime getInicio()     { return inicio; }
@@ -78,6 +86,7 @@ public class HorarioTutoria {
     public Modalidad getModalidad()      { return modalidad; }
     public int getCapacidadMaxima()      { return capacidadMaxima; }
     public String getUbicacion()         { return ubicacion; }
+    public String getEnlace()            { return enlace; }
 
     @Override
     public String toString() {
@@ -87,6 +96,7 @@ public class HorarioTutoria {
                 + ", " + modalidad
                 + ", cap=" + capacidadMaxima
                 + (ubicacion.isBlank() ? "" : ", " + ubicacion)
+                + (enlace.isBlank() ? "" : ", enlace=" + enlace)
                 + ", disponible=" + disponible + "]";
     }
 }

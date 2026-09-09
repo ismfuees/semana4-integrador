@@ -1,7 +1,9 @@
 package edu.uees.tutorias.service;
 
+import edu.uees.tutorias.adapter.Videoconferencia;
 import edu.uees.tutorias.domain.Estudiante;
 import edu.uees.tutorias.domain.HorarioTutoria;
+import edu.uees.tutorias.domain.Modalidad;
 import edu.uees.tutorias.domain.Reserva;
 import edu.uees.tutorias.notification.Notificador;
 import edu.uees.tutorias.notification.NotificadorCreator;
@@ -12,26 +14,36 @@ import java.util.List;
 /**
  * Coordina el proceso de crear, confirmar, cancelar y reprogramar reservas.
  *
- * Puede construirse de dos formas:
+ * Puede construirse de tres formas:
  *
  *   1. Con un único {@link Notificador} (constructor original, compatibilidad total).
- *   2. Con una lista de {@link NotificadorCreator} (Factory Method): notifica por
- *      todos los canales disponibles del estudiante, omitiendo los que tengan "-".
+ *   2. Con una lista de {@link NotificadorCreator} (Factory Method multi-canal).
+ *   3. Cualquiera de las anteriores más un {@link Videoconferencia} (Adapter):
+ *      al confirmar una reserva VIRTUAL, genera automáticamente el enlace de reunión
+ *      y lo asigna al horario.
  *
- * No sabe nada de base de datos ni de tecnologías de notificación concretas (DIP).
+ * No sabe nada de base de datos ni de tecnologías concretas (DIP).
  */
 public class ServicioReservas {
 
     private final RepositorioReservas       repositorio;
     private final Notificador               notificador;      // modo legado
     private final List<NotificadorCreator>  creators;         // modo multi-canal
+    private final Videoconferencia          videoconferencia; // Adapter (opcional, puede ser null)
     private long contadorId = 1;
 
     /** Constructor original — mantiene compatibilidad con todo el código existente. */
     public ServicioReservas(RepositorioReservas repositorio, Notificador notificador) {
-        this.repositorio = repositorio;
-        this.notificador = notificador;
-        this.creators    = Collections.emptyList();
+        this(repositorio, notificador, null);
+    }
+
+    /** Constructor original + Adapter de videoconferencia. */
+    public ServicioReservas(RepositorioReservas repositorio, Notificador notificador,
+                            Videoconferencia videoconferencia) {
+        this.repositorio      = repositorio;
+        this.notificador      = notificador;
+        this.creators         = Collections.emptyList();
+        this.videoconferencia = videoconferencia;
     }
 
     /**
@@ -40,9 +52,16 @@ public class ServicioReservas {
      * Los canales cuyo dato de contacto sea "-" se omiten automáticamente.
      */
     public ServicioReservas(RepositorioReservas repositorio, List<NotificadorCreator> creators) {
-        this.repositorio = repositorio;
-        this.notificador = null;
-        this.creators    = Collections.unmodifiableList(creators);
+        this(repositorio, creators, null);
+    }
+
+    /** Constructor multi-canal + Adapter de videoconferencia. */
+    public ServicioReservas(RepositorioReservas repositorio, List<NotificadorCreator> creators,
+                            Videoconferencia videoconferencia) {
+        this.repositorio      = repositorio;
+        this.notificador      = null;
+        this.creators         = Collections.unmodifiableList(creators);
+        this.videoconferencia = videoconferencia;
     }
 
     /** Crea una nueva reserva, ocupa el horario, persiste y notifica. */
@@ -62,12 +81,24 @@ public class ServicioReservas {
         return reserva;
     }
 
-    /** Confirma una reserva existente y notifica al estudiante. */
+    /** Confirma una reserva existente, genera enlace virtual si aplica y notifica. */
     public void confirmarReserva(Long reservaId) {
         Reserva reserva = obtenerReservaOFallar(reservaId);
         reserva.confirmar();
+
+        // Si la tutoría es virtual y hay un Adapter configurado, genera el enlace
+        if (videoconferencia != null
+                && reserva.getHorario().getModalidad() == Modalidad.VIRTUAL) {
+            String enlace = videoconferencia.crearEnlace(
+                    reserva.getHorario().getAsignatura().getNombre(),
+                    reserva.getEstudiante().getEmail());
+            reserva.getHorario().setEnlace(enlace);
+        }
+
         notificarTodos(reserva.getEstudiante(),
-                "Tu reserva " + reservaId + " ha sido confirmada.");
+                "Tu reserva " + reservaId + " ha sido confirmada."
+                + (reserva.getHorario().getEnlace().isBlank()
+                   ? "" : " Enlace: " + reserva.getHorario().getEnlace()));
     }
 
     /** Cancela una reserva y libera el horario. */
