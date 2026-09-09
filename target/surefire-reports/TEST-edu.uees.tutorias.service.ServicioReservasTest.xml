@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="edu.uees.tutorias.service.ServicioReservasTest" time="0.175" tests="5" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="edu.uees.tutorias.service.ServicioReservasTest" time="0.223" tests="9" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="ES"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-21-openjdk-21.0.10.0.7-1.el8.x86_64/lib"/>
-    <property name="sun.java.command" value="/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire/surefirebooter-20260908193239611_3.jar /home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire 2026-09-08T19-32-39_405-jvmRun1 surefire-20260908193239611_1tmp surefire_0-20260908193239611_2tmp"/>
+    <property name="sun.java.command" value="/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire/surefirebooter-20260908200311729_3.jar /home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire 2026-09-08T20-03-11_494-jvmRun1 surefire-20260908200311729_1tmp surefire_0-20260908200311729_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/test-classes:/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/classes:/home/ivanstalyn/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/home/ivanstalyn/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/home/ivanstalyn/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/ivanstalyn/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/home/ivanstalyn/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/ivanstalyn/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/home/ivanstalyn/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/home/ivanstalyn/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -28,7 +28,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
-    <property name="surefire.real.class.path" value="/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire/surefirebooter-20260908193239611_3.jar"/>
+    <property name="surefire.real.class.path" value="/home/ivanstalyn/Documentos/YO/UEESGit/semana4-integrador/target/surefire/surefirebooter-20260908200311729_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.10+7-LTS"/>
     <property name="user.name" value="ivanstalyn"/>
@@ -55,9 +55,13 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="crearReserva_conHorarioNoDisponible_debeLanzarExcepcion" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.085"/>
-  <testcase name="reprogramarReserva_debeLiberarHorarioAnterior" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.018"/>
-  <testcase name="confirmarReserva_debeCambiarEstadoAConfirmada" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.003"/>
-  <testcase name="cancelarReserva_debeLiberarElHorario" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.002"/>
+  <testcase name="crearReserva_conHorarioNoDisponible_debeLanzarExcepcion" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.103"/>
+  <testcase name="reprogramarReserva_debeLiberarHorarioAnterior" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.017"/>
+  <testcase name="builder_sinCampoObligatorio_debeLanzarExcepcion" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.005"/>
+  <testcase name="confirmarReserva_debeCambiarEstadoAConfirmada" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.004"/>
+  <testcase name="cancelarReserva_debeLiberarElHorario" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.003"/>
+  <testcase name="builder_conCamposOpcionales_debeCrearHorarioCorrectamente" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.004"/>
+  <testcase name="builder_horarioPresencial_puedeReservarse" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.002"/>
   <testcase name="crearReserva_debeCambiarHorarioANoDisponible" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.002"/>
+  <testcase name="builder_sinCamposOpcionales_debeUsarValoresPorDefecto" classname="edu.uees.tutorias.service.ServicioReservasTest" time="0.002"/>
 </testsuite>

@@ -1,12 +1,14 @@
 edu/uees/tutorias/domain/Estudiante.class
 edu/uees/tutorias/service/RepositorioReservasEnMemoria.class
-edu/uees/tutorias/domain/Usuario.class
 edu/uees/tutorias/domain/Docente.class
 edu/uees/tutorias/domain/EstadoReserva.class
-edu/uees/tutorias/domain/Reserva.class
 edu/uees/tutorias/domain/Asignatura.class
+edu/uees/tutorias/domain/Reserva.class
 edu/uees/tutorias/service/ServicioReservas.class
-edu/uees/tutorias/service/RepositorioReservas.class
 edu/uees/tutorias/domain/HorarioTutoria.class
 edu/uees/tutorias/notification/Notificador.class
+edu/uees/tutorias/domain/HorarioTutoriaBuilder.class
+edu/uees/tutorias/domain/Usuario.class
+edu/uees/tutorias/domain/Modalidad.class
+edu/uees/tutorias/service/RepositorioReservas.class
 edu/uees/tutorias/notification/NotificadorEmail.class
