@@ -1,11 +1,14 @@
 package edu.uees.tutorias.service;
 
 import edu.uees.tutorias.domain.*;
-import edu.uees.tutorias.notification.Notificador;
+import edu.uees.tutorias.notification.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -151,5 +154,147 @@ class ServicioReservasTest {
         assertFalse(horarioPresencial.estaDisponible());
         assertEquals(Modalidad.PRESENCIAL, reserva.getHorario().getModalidad());
         assertEquals(3, reserva.getHorario().getCapacidadMaxima());
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests del Factory Method (notificaciones multi-canal)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void factoryMethod_estudianteConTodosLosCanales_recibeNotificacionEnCadaCanal() {
+        // Estudiante con todos los canales registrados: debe recibir notificación
+        // por Email, SMS, Push, Teams y WhatsApp al crear una reserva.
+        Estudiante estudianteCompleto = new EstudianteBuilder()
+                .id(10L)
+                .nombre("Luis Mora")
+                .email("luis@uees.edu.ec")
+                .matricula("2024-010")
+                .celular("+593991111111")
+                .deviceId("device-abc-123")
+                .cuentaTeams("luis@uees.edu.ec")
+                .userWhatsapp("+593991111111")
+                .build();
+
+        List<String> canalesNotificados = new ArrayList<>();
+
+        // Creators de prueba que registran qué canal se usó
+        List<NotificadorCreator> creatorsEspias = Arrays.asList(
+            new EmailCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("EMAIL:" + dest);
+                }
+            },
+            new SmsCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("SMS:" + dest);
+                }
+            },
+            new PushCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("PUSH:" + dest);
+                }
+            },
+            new TeamsCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("TEAMS:" + dest);
+                }
+            },
+            new WhatsappCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("WHATSAPP:" + dest);
+                }
+            }
+        );
+
+        ServicioReservas servicioMultiCanal =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), creatorsEspias);
+        servicioMultiCanal.crearReserva(estudianteCompleto, horario);
+
+        // Se deben haber enviado 5 notificaciones (una por canal)
+        assertEquals(5, canalesNotificados.size());
+        assertTrue(canalesNotificados.stream().anyMatch(c -> c.startsWith("EMAIL:")));
+        assertTrue(canalesNotificados.stream().anyMatch(c -> c.startsWith("SMS:")));
+        assertTrue(canalesNotificados.stream().anyMatch(c -> c.startsWith("PUSH:")));
+        assertTrue(canalesNotificados.stream().anyMatch(c -> c.startsWith("TEAMS:")));
+        assertTrue(canalesNotificados.stream().anyMatch(c -> c.startsWith("WHATSAPP:")));
+    }
+
+    @Test
+    void factoryMethod_estudianteSinCanalSmsNiPush_omiteEsosCanales() {
+        // Estudiante solo con email y whatsapp: SMS y Push deben omitirse.
+        Estudiante estudianteParcial = new EstudianteBuilder()
+                .id(11L)
+                .nombre("Marta Gil")
+                .email("marta@uees.edu.ec")
+                .matricula("2024-011")
+                // celular y deviceId quedan con valor "-" por defecto
+                .userWhatsapp("+593992222222")
+                .build();
+
+        List<String> canalesNotificados = new ArrayList<>();
+
+        List<NotificadorCreator> creatorsEspias = Arrays.asList(
+            new EmailCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("EMAIL");
+                }
+            },
+            new SmsCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("SMS");
+                }
+            },
+            new PushCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("PUSH");
+                }
+            },
+            new WhatsappCreator() {
+                @Override protected Notificador crearNotificador() {
+                    return (dest, msg) -> canalesNotificados.add("WHATSAPP");
+                }
+            }
+        );
+
+        ServicioReservas servicioMultiCanal =
+                new ServicioReservas(new RepositorioReservasEnMemoria(), creatorsEspias);
+        servicioMultiCanal.crearReserva(estudianteParcial, horario);
+
+        // Solo Email y WhatsApp deben haberse enviado
+        assertEquals(2, canalesNotificados.size());
+        assertTrue(canalesNotificados.contains("EMAIL"));
+        assertTrue(canalesNotificados.contains("WHATSAPP"));
+        assertFalse(canalesNotificados.contains("SMS"));
+        assertFalse(canalesNotificados.contains("PUSH"));
+    }
+
+    @Test
+    void estudianteBuilder_sinCamposOpcionales_usaValorSinDato() {
+        // Cuando no se especifican los canales opcionales,
+        // todos deben tener el valor "-".
+        Estudiante e = new EstudianteBuilder()
+                .id(12L)
+                .nombre("Pedro Ruiz")
+                .email("pedro@uees.edu.ec")
+                .matricula("2024-012")
+                .build();
+
+        assertEquals("-", e.getCelular());
+        assertEquals("-", e.getDeviceId());
+        assertEquals("-", e.getCuentaTeams());
+        assertEquals("-", e.getUserWhatsapp());
+    }
+
+    @Test
+    void estudianteBuilder_sinCampoObligatorio_debeLanzarExcepcion() {
+        // build() sin nombre debe fallar con mensaje claro.
+        assertThrows(IllegalStateException.class, () ->
+                new EstudianteBuilder()
+                        .id(13L)
+                        // nombre omitido
+                        .email("x@uees.edu.ec")
+                        .matricula("2024-013")
+                        .build()
+        );
     }
 }

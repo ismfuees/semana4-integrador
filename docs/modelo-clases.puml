@@ -44,11 +44,40 @@ package "edu.uees.tutorias.domain" {
     }
 
     class Estudiante {
-        - matricula : String
-        - reservas  : List<Reserva>
+        + {static} SIN_DATO : String = "-"
+        - matricula     : String
+        - celular       : String
+        - deviceId      : String
+        - cuentaTeams   : String
+        - userWhatsapp  : String
+        - reservas      : List<Reserva>
         + registrarReserva(reserva: Reserva) : void
         + consultarReservas()                : List<Reserva>
-        + getMatricula()                     : String
+        + getMatricula()    : String
+        + getCelular()      : String
+        + getDeviceId()     : String
+        + getCuentaTeams()  : String
+        + getUserWhatsapp() : String
+    }
+
+    class EstudianteBuilder {
+        - id            : Long
+        - nombre        : String
+        - email         : String
+        - matricula     : String
+        - celular       : String = "-"
+        - deviceId      : String = "-"
+        - cuentaTeams   : String = "-"
+        - userWhatsapp  : String = "-"
+        + id(id: Long)                       : EstudianteBuilder
+        + nombre(nombre: String)             : EstudianteBuilder
+        + email(email: String)               : EstudianteBuilder
+        + matricula(matricula: String)       : EstudianteBuilder
+        + celular(celular: String)           : EstudianteBuilder
+        + deviceId(deviceId: String)         : EstudianteBuilder
+        + cuentaTeams(cuentaTeams: String)   : EstudianteBuilder
+        + userWhatsapp(userWhatsapp: String) : EstudianteBuilder
+        + build()                            : Estudiante
     }
 
     class Docente {
@@ -61,6 +90,7 @@ package "edu.uees.tutorias.domain" {
 
     Usuario <|-- Estudiante
     Usuario <|-- Docente
+    EstudianteBuilder ..> Estudiante : construye >
 
     class Asignatura {
         - id     : Long
@@ -79,16 +109,16 @@ package "edu.uees.tutorias.domain" {
         - modalidad       : Modalidad
         - capacidadMaxima : int
         - ubicacion       : String
-        + estaDisponible()   : boolean
-        + reservar()         : void
-        + liberar()          : void
-        + getId()            : Long
-        + getInicio()        : LocalDateTime
-        + getFin()           : LocalDateTime
-        + getAsignatura()    : Asignatura
-        + getModalidad()     : Modalidad
+        + estaDisponible()    : boolean
+        + reservar()          : void
+        + liberar()           : void
+        + getId()             : Long
+        + getInicio()         : LocalDateTime
+        + getFin()            : LocalDateTime
+        + getAsignatura()     : Asignatura
+        + getModalidad()      : Modalidad
         + getCapacidadMaxima(): int
-        + getUbicacion()     : String
+        + getUbicacion()      : String
     }
 
     class HorarioTutoriaBuilder {
@@ -99,39 +129,39 @@ package "edu.uees.tutorias.domain" {
         - modalidad       : Modalidad = VIRTUAL
         - capacidadMaxima : int = 1
         - ubicacion       : String = ""
-        + id(id: Long)                          : HorarioTutoriaBuilder
-        + inicio(inicio: LocalDateTime)         : HorarioTutoriaBuilder
-        + fin(fin: LocalDateTime)               : HorarioTutoriaBuilder
-        + asignatura(asignatura: Asignatura)    : HorarioTutoriaBuilder
-        + modalidad(modalidad: Modalidad)       : HorarioTutoriaBuilder
-        + capacidadMaxima(capacidad: int)       : HorarioTutoriaBuilder
-        + ubicacion(ubicacion: String)          : HorarioTutoriaBuilder
-        + build()                               : HorarioTutoria
+        + id(id: Long)                       : HorarioTutoriaBuilder
+        + inicio(inicio: LocalDateTime)      : HorarioTutoriaBuilder
+        + fin(fin: LocalDateTime)            : HorarioTutoriaBuilder
+        + asignatura(a: Asignatura)          : HorarioTutoriaBuilder
+        + modalidad(m: Modalidad)            : HorarioTutoriaBuilder
+        + capacidadMaxima(cap: int)          : HorarioTutoriaBuilder
+        + ubicacion(ubicacion: String)       : HorarioTutoriaBuilder
+        + build()                            : HorarioTutoria
     }
 
     class Reserva {
         - id            : Long
         - estado        : EstadoReserva
         - fechaCreacion : LocalDateTime
-        + confirmar()                              : void
-        + cancelar()                               : void
-        + reprogramar(nuevoHorario: HorarioTutoria): void
-        + marcarRealizada()                        : void
-        + getId()           : Long
-        + getEstudiante()   : Estudiante
-        + getHorario()      : HorarioTutoria
-        + getEstado()       : EstadoReserva
-        + getFechaCreacion(): LocalDateTime
+        + confirmar()                               : void
+        + cancelar()                                : void
+        + reprogramar(nuevoHorario: HorarioTutoria) : void
+        + marcarRealizada()                         : void
+        + getId()            : Long
+        + getEstudiante()    : Estudiante
+        + getHorario()       : HorarioTutoria
+        + getEstado()        : EstadoReserva
+        + getFechaCreacion() : LocalDateTime
     }
 
     ' Relaciones dentro del dominio
-    HorarioTutoria --> Modalidad       : usa >
-    HorarioTutoria --> Asignatura      : corresponde a >
-    HorarioTutoriaBuilder ..> HorarioTutoria : construye >
-    Docente     "1"    --  "0..*" HorarioTutoria : publica >
-    Reserva     "0..*" --> "1"    HorarioTutoria : ocupa >
-    Reserva     -->  EstadoReserva    : usa >
-    Estudiante  "1"    --  "0..*" Reserva        : realiza >
+    HorarioTutoria     -->       Modalidad        : usa >
+    HorarioTutoria     -->       Asignatura       : corresponde a >
+    HorarioTutoriaBuilder ..>    HorarioTutoria   : construye >
+    Docente     "1"    --  "0..*" HorarioTutoria  : publica >
+    Reserva     "0..*" --> "1"    HorarioTutoria  : ocupa >
+    Reserva     -->              EstadoReserva    : usa >
+    Estudiante  "1"    --  "0..*" Reserva         : realiza >
 }
 
 ' ════════════════════════════════════════════════════════
@@ -144,11 +174,69 @@ package "edu.uees.tutorias.notification" {
         + enviar(destinatario: String, mensaje: String) : void
     }
 
+    ' ── ConcreteProducts ───────────────────────────────
     class NotificadorEmail {
         + enviar(destinatario: String, mensaje: String) : void
     }
+    class NotificadorSms {
+        + enviar(destinatario: String, mensaje: String) : void
+    }
+    class NotificadorPush {
+        + enviar(destinatario: String, mensaje: String) : void
+    }
+    class NotificadorTeams {
+        + enviar(destinatario: String, mensaje: String) : void
+    }
+    class NotificadorWhatsapp {
+        + enviar(destinatario: String, mensaje: String) : void
+    }
 
-    Notificador <|.. NotificadorEmail : implementa
+    Notificador <|.. NotificadorEmail    : implementa
+    Notificador <|.. NotificadorSms      : implementa
+    Notificador <|.. NotificadorPush     : implementa
+    Notificador <|.. NotificadorTeams    : implementa
+    Notificador <|.. NotificadorWhatsapp : implementa
+
+    ' ── Creator abstracto (Factory Method) ─────────────
+    abstract class NotificadorCreator {
+        # crearNotificador()                              : Notificador
+        + obtenerDestinatario(estudiante: Estudiante)     : String
+        + notificar(estudiante: Estudiante, mensaje: String) : void
+    }
+
+    ' ── ConcreteCreators ───────────────────────────────
+    class EmailCreator {
+        # crearNotificador()                          : Notificador
+        + obtenerDestinatario(e: Estudiante)          : String
+    }
+    class SmsCreator {
+        # crearNotificador()                          : Notificador
+        + obtenerDestinatario(e: Estudiante)          : String
+    }
+    class PushCreator {
+        # crearNotificador()                          : Notificador
+        + obtenerDestinatario(e: Estudiante)          : String
+    }
+    class TeamsCreator {
+        # crearNotificador()                          : Notificador
+        + obtenerDestinatario(e: Estudiante)          : String
+    }
+    class WhatsappCreator {
+        # crearNotificador()                          : Notificador
+        + obtenerDestinatario(e: Estudiante)          : String
+    }
+
+    NotificadorCreator <|-- EmailCreator
+    NotificadorCreator <|-- SmsCreator
+    NotificadorCreator <|-- PushCreator
+    NotificadorCreator <|-- TeamsCreator
+    NotificadorCreator <|-- WhatsappCreator
+
+    EmailCreator    ..> NotificadorEmail    : crea >
+    SmsCreator      ..> NotificadorSms      : crea >
+    PushCreator     ..> NotificadorPush     : crea >
+    TeamsCreator    ..> NotificadorTeams    : crea >
+    WhatsappCreator ..> NotificadorWhatsapp : crea >
 }
 
 ' ════════════════════════════════════════════════════════
@@ -169,16 +257,17 @@ package "edu.uees.tutorias.service" {
     }
 
     class ServicioReservas {
-        + crearReserva(estudiante: Estudiante, horario: HorarioTutoria) : Reserva
-        + confirmarReserva(reservaId: Long)                            : void
-        + cancelarReserva(reservaId: Long)                             : void
+        + crearReserva(estudiante: Estudiante, horario: HorarioTutoria)      : Reserva
+        + confirmarReserva(reservaId: Long)                                  : void
+        + cancelarReserva(reservaId: Long)                                   : void
         + reprogramarReserva(reservaId: Long, nuevoHorario: HorarioTutoria) : void
     }
 
-    RepositorioReservas      <|..  RepositorioReservasEnMemoria : implementa
-    ServicioReservas         -->   RepositorioReservas           : persiste via >
-    ServicioReservas         -->   Notificador                   : notifica via >
-    ServicioReservas         ..>   Reserva                       : crea >
+    RepositorioReservas  <|..  RepositorioReservasEnMemoria  : implementa
+    ServicioReservas     -->   RepositorioReservas            : persiste via >
+    ServicioReservas     -->   Notificador                    : notifica via (legado) >
+    ServicioReservas     o-->  NotificadorCreator             : notifica via (multi-canal) >
+    ServicioReservas     ..>   Reserva                        : crea >
 }
 
 @enduml
